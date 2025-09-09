@@ -20,7 +20,7 @@ interface PropertyBuilderProps {
 }
 
 const formatOptions = [
-  { value: '', label: 'None' },
+  { value: 'none', label: 'None' },
   { value: 'date', label: 'Date' },
   { value: 'date-time', label: 'Date Time' },
   { value: 'time', label: 'Time' },
@@ -165,9 +165,9 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
             <div className="space-y-2">
               <Label>Format</Label>
               <Select
-                value={property.format || ''}
+                value={property.format || 'none'}
                 onValueChange={(value) => 
-                  onUpdate({ ...property, format: value || undefined })
+                  onUpdate({ ...property, format: value === 'none' ? undefined : value })
                 }
               >
                 <SelectTrigger>
