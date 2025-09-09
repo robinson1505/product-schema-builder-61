@@ -120,6 +120,7 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
               onChange={(e) => onRename(e.target.value)}
               placeholder="Property name"
               className="font-medium"
+              disabled={false}
             />
           </div>
           <div className="flex items-center space-x-2">

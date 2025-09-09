@@ -199,7 +199,12 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({
             <CardTitle>Properties</CardTitle>
             <CardDescription>Define the fields for this schema</CardDescription>
           </div>
-          <Button onClick={addProperty} variant="outline" size="sm">
+          <Button 
+            onClick={addProperty} 
+            variant="outline" 
+            size="sm"
+            disabled={!category.trim() || !eventType.trim() || !title.trim()}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Property
           </Button>
