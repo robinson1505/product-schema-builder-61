@@ -3,6 +3,7 @@ export interface SchemaProperty {
   description?: string;
   enum?: string[];
   format?: string;
+  multiple?: boolean; // For select with multiple options
   items?: {
     type: string;
     format?: string;

@@ -27,6 +27,8 @@ const formatOptions = [
   { value: 'email', label: 'Email' },
   { value: 'uri', label: 'URI' },
   { value: 'uuid', label: 'UUID' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'textarea', label: 'Text Area' },
 ];
 
 export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
@@ -140,7 +142,7 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label>Type</Label>
             <Select
@@ -195,7 +197,81 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
               placeholder="Property description"
             />
           </div>
+
+          {property.type === 'string' && (
+            <div className="space-y-2">
+              <Label>Multiple Selection</Label>
+              <Switch
+                checked={property.multiple || false}
+                onCheckedChange={(checked) =>
+                  onUpdate({ ...property, multiple: checked })
+                }
+              />
+            </div>
+          )}
         </div>
+
+        {/* Enum options for select dropdowns */}
+        {property.type === 'string' && property.enum && (
+          <div className="space-y-4 mt-4">
+            <div className="flex items-center justify-between">
+              <Label>Options</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newEnum = [...(property.enum || []), ''];
+                  onUpdate({ ...property, enum: newEnum });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Option
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {property.enum.map((option, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <Input
+                    value={option}
+                    onChange={(e) => {
+                      const newEnum = [...property.enum!];
+                      newEnum[index] = e.target.value;
+                      onUpdate({ ...property, enum: newEnum });
+                    }}
+                    placeholder={`Option ${index + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const newEnum = property.enum!.filter((_, i) => i !== index);
+                      onUpdate({ ...property, enum: newEnum.length > 0 ? newEnum : undefined });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add enum options button */}
+        {property.type === 'string' && !property.enum && (
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onUpdate({ ...property, enum: [''] })}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Select Options
+            </Button>
+          </div>
+        )}
       </div>
 
       {property.type === 'object' && (

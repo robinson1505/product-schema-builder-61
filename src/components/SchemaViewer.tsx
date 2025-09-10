@@ -23,6 +23,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 }) => {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
+  const [showMultiStepForm, setShowMultiStepForm] = useState(false);
   const [showDetails, setShowDetails] = useState(true);
 
   const copyToClipboard = async (text: string, type: string) => {
@@ -149,6 +150,13 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
           </Button>
           <Button
             variant="outline"
+            onClick={() => setShowMultiStepForm(!showMultiStepForm)}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            {showMultiStepForm ? 'Hide' : 'Show'} Multi-Step
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => copyToClipboard(JSON.stringify(fullSchemaObject, null, 2), 'Schema')}
           >
             <Copy className="h-4 w-4 mr-2" />
@@ -174,6 +182,23 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
             });
           }}
           onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {/* Multi-Step Form Section */}
+      {showMultiStepForm && (
+        <DynamicForm
+          schema={schema.schema}
+          multiStep={true}
+          onSubmit={(data) => {
+            console.log('Multi-step data submitted for schema:', schema.id, data);
+            onDataSubmit?.(data);
+            toast({
+              title: "Multi-Step Data Submitted",
+              description: "Form data has been processed successfully",
+            });
+          }}
+          onCancel={() => setShowMultiStepForm(false)}
         />
       )}
 

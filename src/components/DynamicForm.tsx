@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,16 +9,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { JSONSchema, SchemaProperty } from '@/types/schema';
+import ReactMarkdown from 'react-markdown';
 
 interface DynamicFormProps {
   schema: JSONSchema;
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  multiStep?: boolean;
 }
 
 // Helper function to create Zod schema from JSON schema
@@ -34,6 +38,12 @@ const createZodSchema = (properties: Record<string, SchemaProperty>, required: s
           zodType = z.string().email('Invalid email format');
         } else if (property.format === 'date' || property.format === 'date-time') {
           zodType = z.date();
+        } else if (property.enum) {
+          if (property.multiple) {
+            zodType = z.array(z.string());
+          } else {
+            zodType = z.string();
+          }
         } else {
           zodType = z.string();
         }
@@ -91,6 +101,7 @@ const FormFieldRenderer: React.FC<{
         );
 
       case 'string':
+        // Date picker
         if (property.format === 'date' || property.format === 'date-time') {
           return (
             <Popover>
@@ -118,17 +129,84 @@ const FormFieldRenderer: React.FC<{
             </Popover>
           );
         }
-        
-        if (property.description && property.description.length > 50) {
+
+        // Select dropdown with enum options
+        if (property.enum && property.enum.length > 0) {
+          if (property.multiple) {
+            // Multiple select with checkboxes
+            return (
+              <div className="space-y-2">
+                {property.enum.map((option) => (
+                  <div key={option} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={(field.value || []).includes(option)}
+                      onCheckedChange={(checked) => {
+                        const currentValues = field.value || [];
+                        if (checked) {
+                          field.onChange([...currentValues, option]);
+                        } else {
+                          field.onChange(currentValues.filter((v: string) => v !== option));
+                        }
+                      }}
+                    />
+                    <label className="text-sm">{option}</label>
+                  </div>
+                ))}
+              </div>
+            );
+          } else {
+            // Single select dropdown
+            return (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  {property.enum.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          }
+        }
+
+        // Markdown editor
+        if (property.format === 'markdown') {
+          return (
+            <div className="space-y-2">
+              <Textarea
+                {...field}
+                placeholder="Enter markdown content..."
+                rows={6}
+                className="font-mono"
+              />
+              {field.value && (
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <div className="text-sm font-medium mb-2">Preview:</div>
+                  <ReactMarkdown>
+                    {field.value}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // Large text area
+        if (property.format === 'textarea' || (property.description && property.description.length > 50)) {
           return (
             <Textarea
               {...field}
               placeholder={property.description}
-              rows={3}
+              rows={4}
             />
           );
         }
         
+        // Regular text input
         return (
           <Input
             {...field}
@@ -220,8 +298,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
   schema,
   onSubmit,
   onCancel,
+  multiStep = false,
 }) => {
   const zodSchema = createZodSchema(schema.properties, schema.required);
+  const [currentStep, setCurrentStep] = useState(0);
   
   const form = useForm({
     resolver: zodResolver(zodSchema),
@@ -233,16 +313,46 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     onSubmit(data);
   };
 
+  // Divide properties into steps for multi-step forms
+  const propertyEntries = Object.entries(schema.properties);
+  const stepsCount = multiStep ? Math.ceil(propertyEntries.length / 3) : 1;
+  const currentStepProperties = multiStep 
+    ? propertyEntries.slice(currentStep * 3, (currentStep + 1) * 3)
+    : propertyEntries;
+
+  const handleNext = () => {
+    if (currentStep < stepsCount - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{schema.title} - Data Input Form</CardTitle>
+        <CardTitle>
+          {schema.title} - Data Input Form
+          {multiStep && ` (Step ${currentStep + 1} of ${stepsCount})`}
+        </CardTitle>
         <CardDescription>{schema.description}</CardDescription>
+        {multiStep && (
+          <div className="w-full bg-muted rounded-full h-2 mt-4">
+            <div
+              className="bg-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentStep + 1) / stepsCount) * 100}%` }}
+            />
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {Object.entries(schema.properties).map(([name, property]) => (
+            {currentStepProperties.map(([name, property]) => (
               <FormFieldRenderer
                 key={name}
                 name={name}
@@ -251,13 +361,31 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               />
             ))}
             
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-gradient-to-r from-primary to-primary-glow">
-                Submit Data
-              </Button>
+            <div className="flex justify-between space-x-2">
+              <div className="flex space-x-2">
+                {multiStep && currentStep > 0 && (
+                  <Button type="button" variant="outline" onClick={handlePrevious}>
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
+                )}
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              </div>
+              
+              <div className="flex space-x-2">
+                {multiStep && currentStep < stepsCount - 1 ? (
+                  <Button type="button" onClick={handleNext}>
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button type="submit" className="bg-gradient-to-r from-primary to-primary-glow">
+                    Submit Data
+                  </Button>
+                )}
+              </div>
             </div>
           </form>
         </Form>
