@@ -41,6 +41,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({
   );
   const [required, setRequired] = useState<string[]>(initialSchema?.schema.required || []);
   const [showPreview, setShowPreview] = useState(false);
+  const [isMultiStep, setIsMultiStep] = useState(false);
 
   const addProperty = () => {
     const propertyName = `property_${Object.keys(properties).length + 1}`;
@@ -180,14 +181,28 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({
             </div>
           </div>
 
-          {/* Additional Properties */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="additionalProperties"
-              checked={additionalProperties}
-              onCheckedChange={setAdditionalProperties}
-            />
-            <Label htmlFor="additionalProperties">Allow additional properties</Label>
+          {/* Form Configuration */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="additionalProperties"
+                checked={additionalProperties}
+                onCheckedChange={setAdditionalProperties}
+              />
+              <Label htmlFor="additionalProperties">Allow additional properties</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="multiStep"
+                checked={isMultiStep}
+                onCheckedChange={setIsMultiStep}
+              />
+              <Label htmlFor="multiStep">Multi-step form</Label>
+              <span className="text-xs text-muted-foreground">
+                Break form into multiple steps for better UX
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>

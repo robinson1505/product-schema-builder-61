@@ -17,6 +17,7 @@ import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { JSONSchema, SchemaProperty } from '@/types/schema';
 import ReactMarkdown from 'react-markdown';
+import { ArrayInput } from './ArrayInput';
 
 interface DynamicFormProps {
   schema: JSONSchema;
@@ -62,7 +63,7 @@ const createZodSchema = (properties: Record<string, SchemaProperty>, required: s
         }
         break;
       case 'array':
-        zodType = z.array(z.any());
+        zodType = z.array(z.string());
         break;
       default:
         zodType = z.any();
@@ -222,6 +223,15 @@ const FormFieldRenderer: React.FC<{
             type="number"
             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
             placeholder={property.description}
+          />
+        );
+
+      case 'array':
+        return (
+          <ArrayInput
+            value={field.value || []}
+            onChange={field.onChange}
+            placeholder={property.description || "Type and press Enter or Space to add items"}
           />
         );
 

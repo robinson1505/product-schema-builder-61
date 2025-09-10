@@ -142,7 +142,7 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Type</Label>
             <Select
@@ -197,25 +197,81 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
               placeholder="Property description"
             />
           </div>
-
-          {property.type === 'string' && (
-            <div className="space-y-2">
-              <Label>Multiple Selection</Label>
-              <Switch
-                checked={property.multiple || false}
-                onCheckedChange={(checked) =>
-                  onUpdate({ ...property, multiple: checked })
-                }
-              />
-            </div>
-          )}
         </div>
 
-        {/* Enum options for select dropdowns */}
+        {/* Input Type Configuration */}
+        <div className="space-y-4 mt-4 p-4 bg-muted/50 rounded-lg">
+          <h4 className="font-medium text-sm">Input Configuration</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {property.type === 'string' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Input Type</Label>
+                  <Select
+                    value={property.enum ? 'select' : property.format || 'text'}
+                    onValueChange={(value) => {
+                      if (value === 'select') {
+                        onUpdate({ ...property, enum: property.enum || [''], format: undefined });
+                      } else if (value === 'text') {
+                        onUpdate({ ...property, enum: undefined, format: undefined });
+                      } else {
+                        onUpdate({ ...property, enum: undefined, format: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select input type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Text Input</SelectItem>
+                      <SelectItem value="textarea">Large Text Area</SelectItem>
+                      <SelectItem value="markdown">Markdown Editor</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="date">Date Picker</SelectItem>
+                      <SelectItem value="date-time">Date Time Picker</SelectItem>
+                      <SelectItem value="select">Select Dropdown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {property.enum && (
+                  <div className="space-y-2">
+                    <Label>Selection Type</Label>
+                    <Switch
+                      checked={property.multiple || false}
+                      onCheckedChange={(checked) =>
+                        onUpdate({ ...property, multiple: checked })
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground ml-2">
+                      {property.multiple ? 'Multiple Selection' : 'Single Selection'}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+
+            {property.type === 'array' && (
+              <div className="space-y-2">
+                <Label>Array Input</Label>
+                <p className="text-sm text-muted-foreground">
+                  Users can add items by typing and pressing Enter or Space
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Select Options Configuration */}
         {property.type === 'string' && property.enum && (
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4 mt-4 p-4 border rounded-lg">
             <div className="flex items-center justify-between">
-              <Label>Options</Label>
+              <div>
+                <Label className="text-sm font-medium">Select Options</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Configure the options for your {property.multiple ? 'multi-select' : 'dropdown'} field
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -229,49 +285,55 @@ export const PropertyBuilder: React.FC<PropertyBuilderProps> = ({
                 Add Option
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {property.enum.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <Input
-                    value={option}
-                    onChange={(e) => {
-                      const newEnum = [...property.enum!];
-                      newEnum[index] = e.target.value;
-                      onUpdate({ ...property, enum: newEnum });
-                    }}
-                    placeholder={`Option ${index + 1}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const newEnum = property.enum!.filter((_, i) => i !== index);
-                      onUpdate({ ...property, enum: newEnum.length > 0 ? newEnum : undefined });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div key={index} className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Label</Label>
+                    <Input
+                      value={option}
+                      onChange={(e) => {
+                        const newEnum = [...property.enum!];
+                        newEnum[index] = e.target.value;
+                        onUpdate({ ...property, enum: newEnum });
+                      }}
+                      placeholder={`Option ${index + 1} Label`}
+                      className="h-8"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Value</Label>
+                    <div className="flex items-center space-x-1">
+                      <Input
+                        value={option}
+                        onChange={(e) => {
+                          const newEnum = [...property.enum!];
+                          newEnum[index] = e.target.value;
+                          onUpdate({ ...property, enum: newEnum });
+                        }}
+                        placeholder={`value_${index + 1}`}
+                        className="h-8"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newEnum = property.enum!.filter((_, i) => i !== index);
+                          onUpdate({ ...property, enum: newEnum.length > 0 ? newEnum : undefined });
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Add enum options button */}
-        {property.type === 'string' && !property.enum && (
-          <div className="mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onUpdate({ ...property, enum: [''] })}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Select Options
-            </Button>
-          </div>
-        )}
       </div>
 
       {property.type === 'object' && (
